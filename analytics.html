@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics Dashboard - Certificate Activity</title>
+  <style>
+    /* (Your existing CSS) */
+    body { font-family: "Segoe UI", Arial, sans-serif; margin: 0; padding: 30px; background: linear-gradient(135deg, #0a0a0a, #1a1a2e); color: #e0e0e0; min-height: 100vh; }
+    .container { max-width: 1400px; margin: 0 auto; background: linear-gradient(145deg, #1e1e1e, #2a2a2a); padding: 35px; border-radius: 14px; box-shadow: 0 8px 25px rgba(0,0,0,.5); animation: fadeIn .9s ease-out; }
+    h1 { text-align: center; font-size: 2.2rem; font-weight: 700; margin-bottom: 25px; color: #fff; border-bottom: 4px solid #ffd700; display: inline-block; padding-bottom: 6px; width: 100%; }
+    
+    /* Navigation buttons styling */
+    .nav-container {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 15px 0;
+      flex-wrap: wrap;
+    }
+    
+    .nav-button {
+      background: linear-gradient(135deg, #00d4ff, #0096c7);
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      text-decoration: none;
+    }
+    
+    .nav-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+      background: linear-gradient(135deg, #00e5ff, #00a8e8);
+    }
+    
+    .nav-button:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .network-info { background: linear-gradient(135deg, #2a2a3e, #1a1a2e); border: 1px solid #00d4ff; padding: 15px; border-radius: 8px; margin-bottom: 25px; font-size: .95rem; color: #b0e0ff; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .stat-card { background: linear-gradient(145deg, #2a2535, #3a2f3f); border: 1px solid #ffd700; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(255,215,0,.1); transition: transform .3s ease; }
+    .stat-card:hover { transform: translateY(-4px); box-shadow: 0 6px 20px rgba(255,215,0,.2); }
+    .stat-card h3 { margin: 0 0 10px; font-size: 1rem; color: #00d4ff; text-transform: uppercase; }
+    .stat-card .value { font-size: 2.5rem; font-weight: 700; color: #ffd700; }
+    .section { background: linear-gradient(145deg, #232a35, #2d3642); border: 1px solid #00d4ff; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,212,255,.1); }
+    .section h2 { margin: 0 0 20px; font-size: 1.4rem; color: #fff; border-left: 4px solid #00d4ff; padding-left: 10px; }
+    .loading { text-align: center; padding: 40px; }
+    .spinner { border: 4px solid #333; border-top: 4px solid #ffd700; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+    .table-container { overflow-x: auto; margin-top: 15px; }
+    table { width: 100%; border-collapse: collapse; background: #1a1a1a; border-radius: 8px; overflow: hidden; }
+    thead { background: linear-gradient(135deg, #2a2a3e, #1e1e2e); }
+    th { padding: 12px; text-align: left; color: #00ff88; font-weight: 600; font-size: .9rem; border-bottom: 2px solid #444; }
+    td { padding: 12px; border-bottom: 1px solid #333; font-size: .9rem; }
+    tbody tr:hover { background: rgba(0, 212, 255, 0.05); }
+    .tx-link { color: #00d4ff; text-decoration: none; font-family: monospace; font-size: .85rem; }
+    .tx-link:hover { text-decoration: underline; }
+    .refresh-btn { padding: 10px 20px; border: none; border-radius: 8px; background: linear-gradient(135deg, #00ff88, #00d4ff); color: #000; font-weight: 600; cursor: pointer; transition: transform .2s ease; margin-bottom: 15px; }
+    .refresh-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,255,136,.4); }
+    .error-message { background: linear-gradient(135deg, #4d1a1a, #3a0f0f); color: #ff6b6b; border: 1px solid #ff6b6b; padding: 15px; border-radius: 8px; margin: 15px 0; }
+    .info-message { background: linear-gradient(135deg, #1a2d4d, #0f1f3a); color: #00d4ff; border: 1px solid #00d4ff; padding: 15px; border-radius: 8px; margin: 15px 0; }
+    .nav-links { margin-top: 20px; text-align: center; padding-top: 20px; border-top: 2px solid #333; }
+    .nav-links a { display: inline-block; padding: 10px 18px; margin: 5px; border-radius: 8px; background: linear-gradient(135deg, #00d4ff, #0096c7); color: #000; font-weight: 600; text-decoration: none; transition: transform .3s ease; }
+    .nav-links a:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,212,255,.4); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @media (max-width: 768px) { body { padding: 15px; } .container { padding: 20px; } h1 { font-size: 1.8rem; } .stats-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Certificate Analytics Dashboard</h1>
+    <div class="network-info" id="networkInfo">
+      <span class="network-badge">Sepolia Testnet</span>
+      <span class="contract-address">Contract:
+        <a href="https://sepolia.etherscan.io/address/0x3ef5915D7A3d755A3cEbA73B407ecef47545910D" target="_blank">
+          0x3ef5...910D</a></span>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card"><h3>Total Issued</h3><div class="value" id="totalIssued">-</div></div>
+      <div class="stat-card"><h3>Active Certificates</h3><div class="value" id="activeCerts">-</div></div>
+      <div class="stat-card"><h3>Revoked</h3><div class="value" id="totalRevoked">-</div></div>
+      <div class="stat-card"><h3>Total Transfers</h3><div class="value" id="totalTransfers">-</div></div>
+      <div class="stat-card"><h3>Batch Revocations</h3><div class="value" id="batchRevoked">-</div></div>
+      <div class="stat-card"><h3>QR Scans</h3><div class="value" id="qrScans">-</div></div>
+    </div>
+
+    <div class="section">
+      <h2>All Transactions</h2>
+      <button class="refresh-btn" onclick="loadTransactionList()">🔄 Refresh Data</button>
+      <div id="transactionsLoading" class="loading" style="display:none;">
+        <div class="spinner"></div>
+        <p>Loading transaction data from blockchain...</p>
+      </div>
+      <div id="transactionsContent"></div>
+    </div>
+    
+    <div class="nav-container" style="margin-top: 30px; border-top: 1px solid #333; padding-top: 20px;">
+      <a href="index.html" class="nav-button">Certificate Verification</a>
+      <a href="manufacturer.html" class="nav-button">Manufacturer Portal</a>
+      <a href="distributor.html" class="nav-button">Distributor/Consumer Portal</a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script>
+    const ETHERSCAN_API_KEY = '93QGAW3UHDGGIUKTCRXW5J3ZJK25H3IR5S';
+    const ETHERSCAN_API = 'https://api-sepolia.etherscan.io/api';
+    const CONTRACT_ADDRESS = '0x3ef5915D7A3d755A3cEbA73B407ecef47545910D';
+
+    function shortAddr(addr) {
+      return addr ? addr.slice(0,6) + '…' + addr.slice(-4) : '-';
+    }
+    function txLink(hash) {
+      return `<a class="tx-link" href="https://sepolia.etherscan.io/tx/${hash}" target="_blank">${hash.slice(0,10)}…</a>`;
+    }
+    function addrLink(addr) {
+      return `<a class="tx-link" href="https://sepolia.etherscan.io/address/${addr}" target="_blank">${shortAddr(addr)}</a>`;
+    }
+    function formatTimeAgo(ts) {
+      const now = Math.floor(Date.now()/1000), d = now - ts;
+      if (d < 60) return `${d}s ago`;
+      if (d < 3600) return `${Math.floor(d/60)}m ago`;
+      if (d < 86400) return `${Math.floor(d/3600)}h ago`;
+      return `${Math.floor(d/86400)}d ago`;
+    }
+
+    async function fetchTransactionList(address, apiKey) {
+      const url = `${ETHERSCAN_API}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=desc&apikey=${apiKey}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      return data.status === "1" ? data.result : [];
+    }
+
+    async function loadTransactionList() {
+      const loading = document.getElementById('transactionsLoading');
+      const content = document.getElementById('transactionsContent');
+      loading.style.display = 'block';
+      content.innerHTML = '';
+      try {
+        const txs = await fetchTransactionList(CONTRACT_ADDRESS, ETHERSCAN_API_KEY);
+        if (!txs.length) {
+          content.innerHTML = '<div class="info-message">No transactions found.</div>';
+          return;
+        }
+        let html = '<div class="table-container"><table><thead><tr><th>Tx Hash</th><th>Method</th><th>Block</th><th>Age</th><th>From</th><th>To</th><th>Fee</th></tr></thead><tbody>';
+        txs.slice(0,20).forEach(tx => {
+          const sig = tx.input.slice(0,10);
+          html += `<tr>
+            <td>${txLink(tx.hash)}</td>
+            <td>${sig}</td>
+            <td>${tx.blockNumber}</td>
+            <td>${formatTimeAgo(parseInt(tx.timeStamp))}</td>
+            <td>${addrLink(tx.from)}</td>
+            <td>${addrLink(tx.to)}</td>
+            <td>${(parseFloat(tx.gasPrice) * parseFloat(tx.gasUsed) / 1e18).toFixed(8)} ETH</td>
+          </tr>`;
+        });
+        html += '</tbody></table></div>';
+        content.innerHTML = html;
+      } catch (err) {
+        console.error(err);
+        content.innerHTML = '<div class="error-message">Error loading transactions.</div>';
+      } finally {
+        loading.style.display = 'none';
+      }
+    }
+
+    async function loadStatistics() {
+      try {
+        const txs = await fetchTransactionList(CONTRACT_ADDRESS, ETHERSCAN_API_KEY);
+
+        let issuedCount = 0;
+        let revokedCount = 0;
+        let transferCount = 0;
+        let batchRevokeCount = 0;
+        let qrScanCount = 0;
+
+        txs.forEach(tx => {
+          const methodId = tx.input.slice(0, 10);
+          // Replace these with your actual selectors:
+          if (methodId === '0xAAAABBBB') { // issueCertificate(...)
+            issuedCount++;
+          } else if (methodId === '0xCCCCDDDD') { // revokeCertificate(...)
+            revokedCount++;
+          } else if (methodId === '0xEEEEFFFF') { // transferCertificate(...)
+            transferCount++;
+          } else if (methodId === '0x11112222') { // batchRevoke(...)
+            batchRevokeCount++;
+          } else if (methodId === '0x33334444') { // recordScan(...)
+            qrScanCount++;
+          }
+        });
+
+        const activeCount = issuedCount - revokedCount;
+
+        document.getElementById('totalIssued').textContent = issuedCount;
+        document.getElementById('activeCerts').textContent = activeCount;
+        document.getElementById('totalRevoked').textContent = revokedCount;
+        document.getElementById('totalTransfers').textContent = transferCount;
+        document.getElementById('batchRevoked').textContent = batchRevokeCount;
+        document.getElementById('qrScans').textContent = qrScanCount;
+
+      } catch (error) {
+        console.error('Error loading statistics:', error);
+      }
+    }
+
+    window.addEventListener('load', () => {
+      loadTransactionList();
+      loadStatistics();
+      setInterval(loadStatistics, 15000);
+    });
+  </script>
+</body>
+</html>

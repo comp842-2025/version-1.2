@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Certificate Verification</title>
+
+  <style>
+    body { font-family:"Segoe UI", Arial, sans-serif; margin:0; padding:30px;
+           background:linear-gradient(135deg,#0a0a0a,#1a1a2e); color:#e0e0e0; min-height:100vh; }
+    .container { max-width:1000px; margin:0 auto; background:linear-gradient(145deg,#1e1e1e,#2a2a2a);
+                 padding:35px; border-radius:14px; box-shadow:0 8px 25px rgba(0,0,0,.5); }
+    
+    /* Navigation buttons styling */
+    .nav-container {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin: 15px 0;
+      flex-wrap: wrap;
+    }
+    
+    .nav-button {
+      background: linear-gradient(135deg, #00d4ff, #0096c7);
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      text-decoration: none;
+    }
+    
+    .nav-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+      background: linear-gradient(135deg, #00e5ff, #00a8e8);
+    }
+    
+    .nav-button:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    h1 { text-align:center; font-size:2.2rem; font-weight:700; margin-bottom:25px; color:#fff;
+         border-bottom:4px solid #00d4ff; display:inline-block; padding-bottom:6px; width:100%; }
+    .network-info { background:linear-gradient(135deg,#2a2a3e,#1a1a2e); border:1px solid #00d4ff; padding:15px;
+                    border-radius:8px; margin-bottom:25px; font-size:.95rem; color:#b0e0ff; }
+    .section { background:linear-gradient(145deg,#232a35,#2d3642); border:1px solid #00d4ff; padding:25px; border-radius:12px;
+               margin-bottom:25px; box-shadow:0 4px 15px rgba(0,212,255,.10); }
+    .section h2 { margin:0 0 12px; font-size:1.4rem; color:#fff; border-left:4px solid #00d4ff; padding-left:10px; }
+    label { display:block; color:#00ff88; font-weight:600; margin-bottom:6px; font-size:.95rem; }
+    input[type="text"] { width:100%; padding:12px; border-radius:8px; border:1px solid #444; background:#1a1a1a; color:#fff;
+                         margin-bottom:12px; font-size:.95rem; box-sizing:border-box; }
+    input[type="text"]::placeholder { color:#888; }
+    input[type="text"]:focus { border-color:#00d4ff; outline:none; box-shadow:0 0 10px rgba(0,212,255,.3); }
+    .btn { padding:12px 18px; border:none; border-radius:8px; font-size:.95rem; font-weight:600; cursor:pointer;
+           transition:transform .2s, background .25s, box-shadow .3s; }
+    .btn:hover { transform:translateY(-2px); }
+    .btn-primary { background:linear-gradient(135deg,#00d4ff,#0096c7); color:#000; }
+    .status { margin:12px 0; padding:14px; border-radius:8px; }
+    .status.success { background:linear-gradient(135deg,#1a4d2e,#0f3a1f); color:#00ff88; border:1px solid #00ff88; }
+    .status.error   { background:linear-gradient(135deg,#4d1a1a,#3a0f0f); color:#ff6b6b; border:1px solid #ff6b6b; }
+    .status.info    { background:linear-gradient(135deg,#1a2d4d,#0f1f3a); color:#00d4ff; border:1px solid #00d4ff; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .grid .full { grid-column:1 / -1; }
+    .card { background:linear-gradient(145deg,#2a2a3e,#1e1e2e); border:1px solid #444; border-radius:10px; padding:16px; }
+    .kv { display:grid; grid-template-columns:180px 1fr; gap:8px 14px; }
+    .kv .k { color:#b0b0b0; }
+    .kv .v { color:#fff; word-break:break-word; }
+    .qr-display{ margin-top:20px; padding:20px; background:linear-gradient(145deg,#2a2a3e,#1e1e2e);
+                 border-radius:8px; border:1px solid #00ff88; text-align:center; display:none; }
+    .qr-display h3{ color:#00ff88; margin-top:0; }
+    .qr-actions{ display:flex; gap:10px; justify-content:center; margin-top:15px; }
+    .nav-links{ margin-top:20px; text-align:center; padding-top:20px; border-top:2px solid #333; }
+    .nav-links a{ display:inline-block; padding:10px 18px; margin:5px; border-radius:8px;
+                  background:linear-gradient(135deg,#00ff88,#00d4ff); color:#000; font-weight:600; text-decoration:none; }
+    @media (max-width:768px){ .grid{grid-template-columns:1fr;} .kv{grid-template-columns:1fr;} .qr-actions{flex-direction:column;} }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Certificate Verification</h1>
+
+    <div class="network-info" id="networkInfo">
+      <strong>Network Status:</strong> Connecting to blockchain...
+    </div>
+
+    <div class="section">
+      <h2>Lookup Certificate</h2>
+      
+      <!-- Improved layout with tabs-like design -->
+      <div style="display: flex; margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 10px;">
+        <div id="manualTab" style="flex: 1; text-align: center; padding: 10px; background: linear-gradient(135deg,#00d4ff,#0096c7); color: #000; border-radius: 8px 8px 0 0; font-weight: bold; cursor: pointer;">Manual Entry</div>
+        <div id="qrTab" style="flex: 1; text-align: center; padding: 10px; background: #2d3642; color: #fff; border-radius: 8px 8px 0 0; margin-left: 5px; cursor: pointer;">QR Code</div>
+      </div>
+      
+      <!-- Manual certificate ID entry -->
+      <div id="manualEntry">
+        <div style="display: flex; align-items: flex-end; margin-bottom: 15px;">
+          <div style="flex: 1; margin-right: 10px;">
+            <label for="verifyCertId">Certificate ID</label>
+            <input id="verifyCertId" type="text" placeholder="Enter certificate ID (e.g., ABC-12345)" style="margin-bottom: 0;" />
+          </div>
+          <button id="verifyBtn" class="btn btn-primary" style="height: 42px;">Verify</button>
+        </div>
+      </div>
+      
+      <!-- QR code options -->
+      <div id="qrEntry" style="display: none;">
+        <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+          <button id="scanQrBtn" class="btn btn-primary" style="flex: 1;">
+            <span style="display: block; font-size: 1.2em; margin-bottom: 5px;">📷</span>
+            Open Camera
+          </button>
+          
+          <label for="qrFileUpload" class="btn btn-primary" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;">
+            <span style="display: block; font-size: 1.2em; margin-bottom: 5px;">📁</span>
+            Upload QR Image
+          </label>
+          <input type="file" id="qrFileUpload" accept="image/*" style="display: none;" />
+        </div>
+        
+        <div id="qrScannerContainer" style="display: none; margin-top: 15px;">
+          <video id="qrScanner" style="width: 100%; border-radius: 8px;"></video>
+          <button id="stopScanBtn" class="btn" style="margin-top: 10px;">Stop Scanning</button>
+        </div>
+        
+        <div id="uploadPreview" style="margin-top: 15px; display: none;">
+          <img id="qrPreview" style="max-width: 100%; border-radius: 8px;" />
+        </div>
+      </div>
+
+      <div id="verifyStatus" class="status info" style="display:none;">Enter a certificate ID and click Verify.</div>
+
+      <div id="verifyResult" class="card" style="display:none;">
+        <h3 style="margin-top:0;">Certificate Details</h3>
+        <div class="kv">
+          <div class="k">Certificate ID</div><div class="v" id="v_certId">—</div>
+          <div class="k">Product Name</div><div class="v" id="v_productName">—</div>
+          <div class="k">Manufacturer</div><div class="v" id="v_mfgName">—</div>
+          <div class="k">Manufacture Date</div><div class="v" id="v_mfgDate">—</div>
+          <div class="k">Expiry Date</div><div class="v" id="v_expDate">—</div>
+          <div class="k">Location</div><div class="v" id="v_location">—</div>
+          <div class="k">Intended Region</div><div class="v" id="v_region">—</div>
+          <div class="k">Details</div><div class="v" id="v_details">—</div>
+          <div class="k">Notes</div><div class="v" id="v_notes">—</div>
+          <div class="k">Current Owner</div><div class="v" id="v_owner">—</div>
+          <div class="k">Validity</div><div class="v" id="v_isValid">—</div>
+        </div>
+      </div>
+
+      <!-- QR (CSP-safe, image-based via app.js) -->
+      <div class="qr-display" id="qrDisplay">
+        <h3>Share / Re-Verify</h3>
+        <p><strong>Certificate ID:</strong> <span id="generatedCertId"></span></p>
+        <canvas id="qrCodeCanvas" width="300" height="300" style="display:none;"></canvas>
+        <img id="qrImgFallback" alt="QR Code" style="display:none;width:300px;height:300px;background:#fff;padding:8px;border-radius:8px;"/>
+        <p style="color:#b0b0b0; margin: 10px 0;">Scan this QR to open this verification page with this certificate</p>
+        <div class="qr-actions">
+          <button class="btn" onclick="downloadQR()">Download QR Code</button>
+          <button class="btn" onclick="printQR()">Print QR Code</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-container">
+      <a href="manufacturer.html" class="nav-button">Manufacturer Portal</a>
+      <a href="distributor.html" class="nav-button">Distributor/Consumer Portal</a>
+      <a href="analytics.html" class="nav-button">Analytics Dashboard</a>
+    </div>
+  </div>
+
+  <!-- Scripts (order matters) -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <script src="app.js"></script>
+  <script>
+    /* ==================== Helpers ==================== */
+    const $ = (id) => document.getElementById(id);
+    const setText = (id, val) => { const el = $(id); if (el) el.textContent = val; return !!el; };
+    const setHTML = (id, val) => { const el = $(id); if (el) el.innerHTML = val; return !!el; };
+    
+    // ---------- Tab switching functionality ----------
+     // Set up tab switching after DOM is loaded
+     window.addEventListener('DOMContentLoaded', () => {
+       const manualTab = $('manualTab');
+       const qrTab = $('qrTab');
+       const manualEntry = $('manualEntry');
+       const qrEntry = $('qrEntry');
+       
+       if (manualTab && qrTab && manualEntry && qrEntry) {
+         // Switch to manual entry tab
+         manualTab.addEventListener('click', () => {
+           manualTab.style.background = 'linear-gradient(135deg,#00d4ff,#0096c7)';
+           manualTab.style.color = '#000';
+           qrTab.style.background = '#2d3642';
+           qrTab.style.color = '#fff';
+           manualEntry.style.display = 'block';
+           qrEntry.style.display = 'none';
+         });
+         
+         // Switch to QR code tab
+         qrTab.addEventListener('click', () => {
+           qrTab.style.background = 'linear-gradient(135deg,#00d4ff,#0096c7)';
+           qrTab.style.color = '#000';
+           manualTab.style.background = '#2d3642';
+           manualTab.style.color = '#fff';
+           qrEntry.style.display = 'block';
+           manualEntry.style.display = 'none';
+         });
+       }
+     });
+
+    function fmtDate(sec) {
+      if (!sec || isNaN(sec)) return '—';
+      const d = new Date(Number(sec) * 1000);
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,'0');
+      const day = String(d.getDate()).padStart(2,'0');
+      return `${y}-${m}-${day}`;
+    }
+    function shorten(addr) {
+      if (!addr || typeof addr !== 'string' || addr.length < 10) return addr || '—';
+      return addr.slice(0,6) + '…' + addr.slice(-4);
+    }
+    function etherscanAddr(addr) {
+      if (!addr) return '#';
+      return `https://sepolia.etherscan.io/address/${addr}`;
+    }
+    function setStatus(msg, type='info') {
+      const el = $('verifyStatus');
+      if (!el) return;
+      el.textContent = msg;
+      el.className = `status ${type}`;
+      el.style.display = 'block';
+    }
+    function showResult(show) {
+      const r = $('verifyResult');
+      if (r) r.style.display = show ? 'block' : 'none';
+      const q = $('qrDisplay');
+      if (q) q.style.display = show ? 'block' : 'none';
+    }
+    function haveResultNodes() {
+      const ids = ['v_certId','v_productName','v_mfgName','v_mfgDate','v_expDate','v_location','v_region','v_details','v_notes','v_owner','v_isValid'];
+      return ids.every(id => $(id));
+    }
+
+    /* ==================== Main verify ==================== */
+    async function verifyCert() {
+      const input = $('verifyCertId');
+      const certId = (input?.value || '').trim();
+      if (!certId) { setStatus('Please enter a certificate ID.', 'error'); showResult(false); return; }
+
+      if (!window.publicContract) {
+        setStatus('Read provider not ready yet. Please wait a moment and try again.', 'error');
+        return;
+      }
+      // Create any missing result nodes dynamically if needed
+      if (!haveResultNodes()) {
+        console.warn('Some result nodes missing, creating them dynamically.');
+        const resultDiv = $('verifyResult');
+        if (resultDiv) {
+          const kvDiv = resultDiv.querySelector('.kv') || document.createElement('div');
+          kvDiv.className = 'kv';
+          
+          // Ensure all required nodes exist
+          const requiredIds = ['v_certId','v_productName','v_mfgName','v_mfgDate','v_expDate','v_location','v_region','v_details','v_notes','v_owner','v_isValid'];
+          const labels = ['Certificate ID', 'Product Name', 'Manufacturer', 'Manufacture Date', 'Expiry Date', 'Location', 'Intended Region', 'Details', 'Notes', 'Current Owner', 'Validity'];
+          
+          requiredIds.forEach((id, index) => {
+            if (!$(id)) {
+              const kDiv = document.createElement('div');
+              kDiv.className = 'k';
+              kDiv.textContent = labels[index];
+              
+              const vDiv = document.createElement('div');
+              vDiv.className = 'v';
+              vDiv.id = id;
+              vDiv.textContent = '—';
+              
+              kvDiv.appendChild(kDiv);
+              kvDiv.appendChild(vDiv);
+            }
+          });
+          
+          if (!kvDiv.parentNode) {
+            resultDiv.appendChild(kvDiv);
+          }
+        }
+      }
+
+      try {
+        setStatus('Looking up certificate…', 'info');
+
+        // Prefer full details; handle array-like or keyed result
+        let full;
+        try { full = await window.publicContract.getCertificateFull(certId); } catch (_) {}
+
+        let productName, mfgName, mfgDateBN, isValid;
+        let expDateBN = 0, location = '', intendedRegion = '', details = '', notes = '';
+
+        if (full && (Array.isArray(full) || typeof full === 'object')) {
+          productName    = full.productName    ?? full[0];
+          mfgName        = full.mfgName        ?? full[1];
+          mfgDateBN      = full.mfgDate        ?? full[2];
+          expDateBN      = full.expDate        ?? full[3];
+          location       = full.location       ?? full[4];
+          intendedRegion = full.intendedRegion ?? full[5];
+          details        = full.details        ?? full[6];
+          notes          = full.notes          ?? full[7];
+          isValid        = typeof full.isValid !== 'undefined' ? full.isValid : full[8];
+        } else {
+          // Fallback legacy (4-tuple)
+          const res = await window.publicContract.getCertificate(certId);
+          productName = res.productName ?? res[0];
+          mfgName     = res.mfgName     ?? res[1];
+          mfgDateBN   = res.mfgDate     ?? res[2];
+          isValid     = (typeof res.isValid !== 'undefined') ? res.isValid : res[3];
+        }
+
+        // Owner
+        let ownerHTML = '—';
+        try {
+          const owner = await window.publicContract.ownerOfCertificate(certId);
+          if (owner && owner !== ethers.constants.AddressZero) {
+            ownerHTML = `<a href="${etherscanAddr(owner)}" target="_blank" rel="noopener">${shorten(owner)}</a>`;
+          }
+        } catch (_) {}
+
+        const toNum = (bn) => (bn && typeof bn.toNumber === 'function') ? bn.toNumber() : Number(bn || 0);
+        const mfgSec = toNum(mfgDateBN);
+        const expSec = toNum(expDateBN);
+
+        // Compute expired status (if expDate set)
+        const nowSec = Math.floor(Date.now() / 1000);
+        const isExpired = expSec > 0 && expSec < nowSec;
+
+        // Populate (null-safe)
+        setText('v_certId', certId);
+        setText('v_productName', productName || '—');
+        setText('v_mfgName', mfgName || '—');
+        setText('v_mfgDate', mfgSec ? fmtDate(mfgSec) : '—');
+        setText('v_expDate', expSec ? fmtDate(expSec) : '—');
+        setText('v_location', location || '—');
+        setText('v_region', intendedRegion || '—');
+        setText('v_details', details || '—');
+        setText('v_notes', notes || '—');
+        setHTML('v_owner', ownerHTML);
+        setText('v_isValid',
+          productName
+            ? (isValid ? (isExpired ? 'Expired' : 'Valid') : 'Revoked')
+            : 'Not Found'
+        );
+
+        showResult(true);
+
+        if (!productName) {
+          setStatus('Certificate not found.', 'error');
+        } else if (!isValid) {
+          setStatus('This certificate has been revoked.', 'error');
+        } else if (isExpired) {
+          setStatus('This certificate has expired.', 'error');
+        } else {
+          setStatus('Certificate is valid ✅', 'success');
+        }
+
+        // Shareable QR (uses app.js -> generateQRCode). No .replace usage.
+        if (typeof generateQRCode === 'function') {
+          let shareUrl;
+          try {
+            const u = new URL(window.location.href);
+            u.searchParams.set('certId', certId);
+            shareUrl = u.toString();
+          } catch {
+            shareUrl = 'index.html?certId=' + encodeURIComponent(certId);
+          }
+          await generateQRCode(shareUrl, certId);
+        }
+      } catch (err) {
+        console.error('verifyCert error:', err);
+        setStatus('Error fetching certificate: ' + (err?.reason || err?.message || String(err)), 'error');
+        showResult(false);
+      }
+    }
+
+    /* ==================== QR Code Scanner ==================== */
+    let videoStream = null;
+    
+    async function startQrScanner() {
+      try {
+        const scannerContainer = $('qrScannerContainer');
+        const scanner = $('qrScanner');
+        
+        scannerContainer.style.display = 'block';
+        
+        // Get camera access
+        videoStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: "environment" } 
+        });
+        
+        scanner.srcObject = videoStream;
+        scanner.play();
+        
+        // Start scanning
+        requestAnimationFrame(scanQRCode);
+        
+        setStatus('Scanning for QR code...', 'info');
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setStatus('Could not access camera. Please check permissions.', 'error');
+      }
+    }
+    
+    function stopQrScanner() {
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+        $('qrScannerContainer').style.display = 'none';
+      }
+    }
+    
+    function scanQRCode() {
+      const scanner = $('qrScanner');
+      
+      if (!videoStream) return;
+      
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (scanner.readyState === scanner.HAVE_ENOUGH_DATA) {
+        canvas.width = scanner.videoWidth;
+        canvas.height = scanner.videoHeight;
+        ctx.drawImage(scanner, 0, 0, canvas.width, canvas.height);
+        
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        
+        if (code) {
+          // Stop scanning
+          stopQrScanner();
+          
+          // Process QR code data
+          processQRData(code.data);
+          return;
+        }
+      }
+      
+      // Continue scanning
+      requestAnimationFrame(scanQRCode);
+    }
+    
+    // Process QR code data
+    function processQRData(data) {
+      try {
+        // Check if data is JSON
+        if (data.startsWith('{') && data.endsWith('}')) {
+          const jsonData = JSON.parse(data);
+          if (jsonData.certId) {
+            // Use the certId from the JSON
+            $('verifyCertId').value = jsonData.certId;
+            
+            // If we have all certificate data in the QR, populate fields directly
+            if (jsonData.productName && jsonData.mfgName) {
+              // Populate fields directly
+              setText('v_certId', jsonData.certId);
+              setText('v_productName', jsonData.productName || '—');
+              setText('v_mfgName', jsonData.mfgName || '—');
+              setText('v_mfgDate', jsonData.mfgDate || '—');
+              setText('v_expDate', jsonData.expDate || '—');
+              setText('v_location', jsonData.location || '—');
+              setText('v_region', jsonData.intendedRegion || '—');
+              setText('v_details', jsonData.details || '—');
+              setText('v_notes', jsonData.notes || '—');
+              setText('v_owner', '—'); // Owner needs to be fetched from blockchain
+              setText('v_isValid', 'Checking...'); // Validity needs to be verified
+              
+              showResult(true);
+              setStatus('Certificate data found in QR code. Verifying on blockchain...', 'info');
+            }
+            
+            // Still verify on blockchain
+            verifyCert();
+          } else {
+            // No certId in JSON
+            setStatus('Invalid QR code format: JSON missing certId', 'error');
+          }
+        } else {
+          // Check for URL parameter
+          const certIdMatch = data.match(/certId=([A-Za-z0-9-]+)/);
+          const certId = certIdMatch ? certIdMatch[1] : data;
+          
+          // Process the certificate
+          $('verifyCertId').value = certId;
+          verifyCert();
+        }
+      } catch (error) {
+        console.error('Error processing QR data:', error);
+        // Treat as plain text
+        $('verifyCertId').value = data;
+        verifyCert();
+      }
+    }
+    
+    // QR Code Upload functionality
+    function handleQrUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          // Display preview
+          $('qrPreview').src = event.target.result;
+          $('uploadPreview').style.display = 'block';
+          
+          // Process the QR code
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0, img.width, img.height);
+          
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height);
+          
+          if (code) {
+            // Process QR code data
+            processQRData(code.data);
+          } else {
+            setStatus('Could not detect a valid QR code in the image.', 'error');
+          }
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    /* ==================== Wire UI ==================== */
+    $('verifyBtn')?.addEventListener('click', verifyCert);
+    $('verifyCertId')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') verifyCert(); });
+    $('scanQrBtn')?.addEventListener('click', startQrScanner);
+    $('stopScanBtn')?.addEventListener('click', stopQrScanner);
+    $('qrFileUpload')?.addEventListener('change', handleQrUpload);
+
+    // Auto-run if URL has ?certId=...
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        const params = new URLSearchParams(window.location.search || '');
+        const fromUrl = params.get('certId');
+        if (fromUrl) {
+          const input = $('verifyCertId');
+          if (input) input.value = fromUrl;
+          verifyCert();
+        }
+      } catch { /* ignore */ }
+    });
+  </script>
+</body>
+</html>

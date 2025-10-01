@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Distributor/Consumer Portal - Certificate Transfer</title>
+
+  <style>
+    body{font-family:"Segoe UI",Arial,sans-serif;margin:0;padding:30px;background:linear-gradient(135deg,#0a0a0a,#1a1a2e);color:#e0e0e0;min-height:100vh}
+    .container{max-width:1000px;margin:0 auto;background:linear-gradient(145deg,#1e1e1e,#2a2a2a);padding:35px;border-radius:14px;box-shadow:0 8px 25px rgba(0,0,0,.5);animation:fadeIn .9s ease-out}
+    h1{text-align:center;font-size:2.2rem;font-weight:700;margin-bottom:25px;color:#fff;border-bottom:4px solid #ffd700;display:inline-block;padding-bottom:6px;width:100%}
+    .network-info{background:linear-gradient(135deg,#2a2a3e,#1a1a2e);border:1px solid #00d4ff;padding:15px;border-radius:8px;margin-bottom:25px;font-size:.95rem;animation:slideIn .7s ease;color:#b0e0ff}
+    .section{background:linear-gradient(145deg,#2e2a25,#3a352f);border:1px solid #ffd700;padding:25px;border-radius:12px;margin-bottom:25px;box-shadow:0 4px 15px rgba(255,215,0,.1);transition:transform .3s ease,box-shadow .3s ease;animation:fadeInUp .8s ease}
+    .section:hover{transform:translateY(-4px);box-shadow:0 6px 20px rgba(255,215,0,.2)}
+    h2{margin-top:0;font-size:1.4rem;border-left:4px solid #ffd700;padding-left:10px;margin-bottom:15px;color:#fff}
+    h3{color:#fff;font-size:1.1rem;margin-bottom:10px}
+    label{display:block;color:#00ff88;font-weight:600;margin-bottom:5px;font-size:.9rem}
+    input[type=text]{width:100%;padding:12px;border-radius:8px;border:1px solid #444;background:#1a1a1a;color:#fff;margin-bottom:10px;font-size:.95rem;transition:border .3s ease,box-shadow .3s ease;box-sizing:border-box}
+    input[type=text]:focus{border-color:#ffd700;outline:0;box-shadow:0 0 10px rgba(255,215,0,.3)}
+    input[type=text]::placeholder{color:#888}
+    button{padding:12px 18px;border:none;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;transition:transform .2s ease,background .25s ease,box-shadow .3s ease}
+    button:hover:not(:disabled){transform:translateY(-2px)}
+    button:disabled{background:#555;color:#999;cursor:not-allowed;opacity:.6}
+    #connectWallet{background:linear-gradient(135deg,#00ff88,#00d4ff);color:#000;width:100%}
+    #connectWallet:hover{background:linear-gradient(135deg,#00cc6f,#00a8cc);box-shadow:0 4px 15px rgba(0,255,136,.4)}
+    #transferCertBtn{background:linear-gradient(135deg,#ffd700,#ffb300);color:#000;width:100%;margin-top:10px}
+    #transferCertBtn:hover:not(:disabled){background:linear-gradient(135deg,#ffb300,#ff8c00);box-shadow:0 4px 15px rgba(255,215,0,.4)}
+    .status{margin:15px 0;padding:15px;border-radius:8px;animation:fadeIn .5s ease}
+    .success{background:linear-gradient(135deg,#1a4d2e,#0f3a1f);color:#00ff88;border:1px solid #00ff88}
+    .error{background:linear-gradient(135deg,#4d1a1a,#3a0f0f);color:#ff6b6b;border:1px solid #ff6b6b}
+    .info{background:linear-gradient(135deg,#1a2d4d,#0f1f3a);color:#00d4ff;border:1px solid #00d4ff}
+    .warning{background:linear-gradient(135deg,#4d3a1a,#3a2a0f);color:#ffd700;border:1px solid #ffd700}
+    .loading{display:none;text-align:center;margin:20px 0}
+    .spinner{border:4px solid #333;border-top:4px solid #ffd700;border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite;margin:0 auto 10px}
+    .transfer-card{background:linear-gradient(145deg,#2a2a3e,#1e1e2e);padding:20px;border-radius:8px;border:1px solid #444;margin-top:20px}
+    .info-box{background:linear-gradient(135deg,#1a2d4d,#0f1f3a);border:1px solid #00d4ff;padding:15px;border-radius:8px;margin:15px 0;color:#b0e0ff}
+    .info-box h4{margin-top:0;color:#00d4ff}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+    .nav-links{margin-top:20px;text-align:center;padding-top:20px;border-top:2px solid #333}
+    .nav-links p{color:#b0b0b0;margin-bottom:10px}
+    .nav-links a{display:inline-block;padding:10px 18px;margin:5px;border-radius:8px;background:linear-gradient(135deg,#00d4ff,#0096c7);color:#000;font-weight:600;text-decoration:none;transition:transform .3s ease,background .25s ease,box-shadow .3s ease}
+    .nav-links a:hover{transform:translateY(-2px);background:linear-gradient(135deg,#00a8cc,#007a99);box-shadow:0 4px 15px rgba(0,212,255,.4)}
+    .nav-container{display:flex;justify-content:center;gap:15px;margin:15px 0;flex-wrap:wrap}
+    .nav-button{background:linear-gradient(135deg,#00d4ff,#0096c7);color:#000;border:none;border-radius:5px;padding:10px 15px;font-weight:600;cursor:pointer;transition:all 0.3s ease;box-shadow:0 4px 6px rgba(0,0,0,0.1);text-decoration:none}
+    .nav-button:hover{transform:translateY(-3px);box-shadow:0 6px 8px rgba(0,0,0,0.2);background:linear-gradient(135deg,#00e5ff,#00a8e8)}
+    .nav-button:active{transform:translateY(1px);box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+    @media (max-width:768px){body{padding:15px}.container{padding:20px}h1{font-size:1.8rem}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Distributor/Consumer Portal</h1>
+
+    <div class="network-info" id="networkInfo">
+      <strong>Network Status:</strong> Connecting to blockchain...
+    </div>
+
+    <div class="section">
+      <h2>Connect Wallet</h2>
+      <div id="connectionStatus" class="status warning">
+        <strong>Wallet Not Connected</strong><br>
+        Connect your MetaMask wallet to transfer certificates
+      </div>
+      <button id="connectWallet">Connect MetaMask</button>
+    </div>
+
+    <div class="section" id="transferSection" style="display:none">
+      <h2>Certificate Transfer</h2>
+      <p style="color:#b0b0b0;margin-bottom:15px;">Transfer certificate ownership to another wallet address</p>
+
+      <div class="info-box">
+        <h4>About Certificate Transfer</h4>
+        <p style="margin:5px 0;">• Transfer certificates to distributors, retailers, or end consumers</p>
+        <p style="margin:5px 0;">• Maintain product authenticity throughout the supply chain</p>
+        <p style="margin:5px 0;">• Track ownership and prevent counterfeiting</p>
+      </div>
+
+      <div class="transfer-card">
+        <h3>Transfer Certificate Ownership</h3>
+
+        <label for="transferCertId">Certificate ID</label>
+        <input type="text" id="transferCertId" placeholder="Enter certificate ID to transfer">
+
+        <div id="ownershipInfo" class="status info" style="display:none;"></div>
+
+        <label for="recipientAddress">Recipient Wallet Address</label>
+        <input type="text" id="recipientAddress" placeholder="Enter recipient's wallet address (0x...)">
+
+        <button id="transferCertBtn">Transfer Certificate</button>
+      </div>
+
+      <div class="loading" id="transferLoading">
+        <div class="spinner"></div>
+        <p>Processing transfer...</p>
+      </div>
+
+      <div id="transferResult"></div>
+    </div>
+  </div>
+
+  <div class="nav-container" style="margin-top: 30px; border-top: 1px solid #333; padding-top: 20px;">
+    <a href="index.html" class="nav-button">Certificate Verification</a>
+    <a href="manufacturer.html" class="nav-button">Manufacturer Portal</a>
+    <a href="analytics.html" class="nav-button">Analytics Dashboard</a>
+  </div>
+
+  <!-- Shared libs -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="app.js?v=1.1"></script>
+
+  <!-- Page-specific logic -->
+  <script>
+  (function () {
+    // Helpers
+    function shorten(a){ return (a && a.length>10) ? a.slice(0,6)+'…'+a.slice(-4) : (a||'—'); }
+    function linkAddr(a){ return a ? '<a target="_blank" rel="noopener" href="https://sepolia.etherscan.io/address/'+a+'">'+shorten(a)+'</a>' : '—'; }
+
+    function refreshUI() {
+      const isConnected = !!window.walletContract && !!window.userAccount;
+      const xfer = document.getElementById('transferSection');
+      const connect = document.getElementById('connectWallet');
+      const connectionStatus = document.getElementById('connectionStatus');
+      
+      if (xfer) xfer.style.display = isConnected ? 'block' : 'none';
+      if (connect) connect.style.display = isConnected ? 'none' : 'block';
+      
+      // Update connection status display
+      if (connectionStatus && isConnected) {
+        connectionStatus.className = 'status success';
+        connectionStatus.innerHTML = '<strong>Wallet Connected</strong><br>Address: ' + shorten(window.userAccount);
+      }
+      
+      if (isConnected) { // attempt ownership refresh for current input
+        const id = document.getElementById('transferCertId')?.value?.trim();
+        if (id) checkOwnership(id);
+        
+        // Ensure transfer section is visible
+        if (xfer) {
+          xfer.style.display = 'block';
+          console.log("Transfer section should be visible now");
+        }
+      }
+    }
+
+    // Initial + connect button
+    refreshUI();
+    const connectBtn = document.getElementById('connectWallet');
+    if (connectBtn) connectBtn.addEventListener('click', async () => {
+      try {
+        // Force UI refresh after connection
+        if (typeof window.connectWallet === 'function') {
+          await window.connectWallet();
+        } else if (window.ethereum) {
+          // Fallback connection if window.connectWallet is not available
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          if (accounts && accounts.length > 0) {
+            window.userAccount = accounts[0];
+            
+            // Setup wallet provider and contract
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            window.signer = provider.getSigner();
+            window.walletContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, window.signer);
+            
+            // Update connection status
+            const connectionStatus = document.getElementById('connectionStatus');
+            if (connectionStatus) {
+              connectionStatus.className = 'status success';
+              connectionStatus.innerHTML = '<strong>Wallet Connected</strong><br>Address: ' + shorten(window.userAccount);
+            }
+          }
+        }
+        
+        setTimeout(() => {
+          refreshUI();
+          console.log("Wallet connected, UI refreshed");
+        }, 800);
+      } catch (err) {
+        console.error("Wallet connection error:", err);
+        
+        // Show error to user
+        const connectionStatus = document.getElementById('connectionStatus');
+        if (connectionStatus) {
+          connectionStatus.className = 'status error';
+          connectionStatus.innerHTML = '<strong>Connection Error</strong><br>' + (err.message || 'Could not connect to wallet');
+        }
+      }
+    });
+
+    // React to wallet events
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', () => { refreshUI(); });
+      window.ethereum.on('chainChanged', () => setTimeout(refreshUI, 800));
+    }
+
+    // Ownership check when certId changes (debounced)
+    const certInput = document.getElementById('transferCertId');
+    let tmr = null;
+    certInput?.addEventListener('input', () => {
+      clearTimeout(tmr);
+      tmr = setTimeout(() => {
+        const id = certInput.value.trim();
+        if (id) checkOwnership(id);
+        else setOwnershipInfo(null);
+      }, 300);
+    });
+
+    async function checkOwnership(certId) {
+      const box = document.getElementById('ownershipInfo');
+      if (!window.publicContract || !box) return;
+
+      try {
+        box.style.display = 'block';
+        box.className = 'status info';
+        box.innerHTML = 'Checking ownership & validity…';
+
+        // Check valid certificate
+        let isValid = false;
+        try {
+          const c = await window.publicContract.getCertificate(certId);
+          isValid = (c && (c.isValid ?? c[3]));
+        } catch (_) {}
+
+        if (!isValid) {
+          box.className = 'status error';
+          box.innerHTML = 'Certificate not found or revoked.';
+          document.getElementById('transferCertBtn').disabled = true;
+          return;
+        }
+
+        // Owner on-chain
+        const owner = await window.publicContract.ownerOfCertificate(certId);
+        const me = (window.userAccount || '').toLowerCase();
+        const isOwner = owner && owner.toLowerCase() === me;
+
+        if (!owner || owner === ethers.constants.AddressZero) {
+          box.className = 'status error';
+          box.innerHTML = 'This certificate has no recorded owner (cannot transfer).';
+          document.getElementById('transferCertBtn').disabled = true;
+          return;
+        }
+
+        if (!isOwner) {
+          box.className = 'status warning';
+          box.innerHTML = 'Current Owner: '+linkAddr(owner)+'<br/>You are not the certificate owner — transfer will revert.';
+          document.getElementById('transferCertBtn').disabled = false; // allow attempt, but warn
+        } else {
+          box.className = 'status success';
+          box.innerHTML = 'You are the certificate owner ('+linkAddr(owner)+'). You can transfer it.';
+          document.getElementById('transferCertBtn').disabled = false;
+        }
+      } catch (e) {
+        box.className = 'status error';
+        box.innerHTML = 'Error checking owner: '+(e?.reason || e?.message || String(e));
+        document.getElementById('transferCertBtn').disabled = false; // let user try
+      }
+    }
+
+    function setOwnershipInfo(html){
+      const box = document.getElementById('ownershipInfo');
+      if (!box) return;
+      if (!html){ box.style.display='none'; box.innerHTML=''; }
+    }
+
+    // Wire transfer
+    const btn = document.getElementById('transferCertBtn');
+    if (btn) btn.addEventListener('click', doTransfer);
+
+    async function doTransfer() {
+      const certIdEl = document.getElementById('transferCertId');
+      const toEl     = document.getElementById('recipientAddress');
+      const resultEl = 'transferResult';
+
+      const certId = (certIdEl?.value || '').trim();
+      const to     = (toEl?.value || '').trim();
+
+      if (!window.walletContract || !window.userAccount) {
+        showStatus(resultEl, 'Please connect your wallet first.', 'error');
+        return;
+      }
+      if (!certId) {
+        showStatus(resultEl, 'Enter a certificate ID.', 'error');
+        return;
+      }
+      if (!ethers.utils.isAddress(to)) {
+        showStatus(resultEl, 'Enter a valid recipient address (0x…).', 'error');
+        return;
+      }
+
+      // Preflight: ensure sender is current owner
+      try {
+        const owner = await window.publicContract.ownerOfCertificate(certId);
+        if (!owner || owner === ethers.constants.AddressZero) {
+          showStatus(resultEl, 'This certificate has no recorded owner (cannot transfer).', 'error');
+          return;
+        }
+        const me = window.userAccount.toLowerCase();
+        if (owner.toLowerCase() !== me) {
+          showStatus(resultEl, 'You are not the current owner; transfer will revert.', 'error');
+          return;
+        }
+        if (owner.toLowerCase() === to.toLowerCase()) {
+          showStatus(resultEl, 'Recipient is already the owner.', 'error');
+          return;
+        }
+      } catch (e) {
+        // continue; contract will enforce
+      }
+
+      // Check transfer function presence
+      const hasTransfer =
+        !!window.walletContract.transferCertificate ||
+        !!(window.walletContract.functions && window.walletContract.functions.transferCertificate);
+      if (!hasTransfer) {
+        showStatus(
+          resultEl,
+          'This contract/ABI does not expose transferCertificate(certId, to).',
+          'error'
+        );
+        return;
+      }
+
+      // Optional: verify certificate exists & valid
+      try {
+        const cert = await window.publicContract.getCertificate(certId);
+        const isValid = cert && (cert.isValid ?? cert[3]);
+        if (!isValid) {
+          showStatus(resultEl, 'Certificate not found or has been revoked.', 'error');
+          return;
+        }
+      } catch (_) {}
+
+      try {
+        showLoading('transferLoading', true);
+        showStatus(resultEl, 'Submitting transfer…', 'info');
+
+        const tx = window.walletContract.transferCertificate
+          ? await window.walletContract.transferCertificate(certId, to)
+          : await window.walletContract.functions.transferCertificate(certId, to);
+
+        const rcpt = await tx.wait();
+        showStatus(
+          resultEl,
+          `Transfer complete.<br>TX: <a target="_blank" rel="noopener" href="https://sepolia.etherscan.io/tx/${rcpt.transactionHash}">${rcpt.transactionHash.slice(0,10)}…</a>`,
+          'success'
+        );
+        if (certIdEl) certIdEl.value = '';
+        if (toEl) toEl.value = '';
+        setOwnershipInfo(null);
+      } catch (err) {
+        let msg = err?.reason || err?.message || 'Unknown error';
+        if (/user rejected/i.test(msg)) msg = 'Transaction rejected by user';
+        showStatus(resultEl, 'Failed to transfer: ' + msg, 'error');
+      } finally {
+        showLoading('transferLoading', false);
+      }
+    }
+  })();
+  </script>
+</body>
+</html>
